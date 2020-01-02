@@ -1,13 +1,14 @@
 from selenium import webdriver
 from time import sleep
 from bs4 import BeautifulSoup
+from pymongo import MongoClient
 import re
 import pandas as pd
 
 # %% Initialize driver and enter info
 url = 'https://www.instagram.com/accounts/login/'
 email = "jcratebo703@gmail.com"
-psd = "psd123678"
+psd = "psd1234"
 
 driverPath = "/Users/caichengyun/PycharmProjects/NOSQL-FinalProject_NLP/geckodriver"
 driver = webdriver.Firefox(executable_path=driverPath)
@@ -52,6 +53,7 @@ print(fullPostUrls)
 
 # %% First Layer
 firstLayerPosts = pd.DataFrame(columns=("PostUrl", "Poster", "Date", "Time", "Post", "Tag", "TagPeople"))
+firstLayerPosts = firstLayerPosts.iloc[0:0]
 firstLayerAllTags = []
 
 for i in range(len(fullPostUrls)):
@@ -137,7 +139,7 @@ for k in range(len(tags)):
         print(tagPeople)
         firstLayerAllTags = firstLayerAllTags + tagPeople
 
-        oneUrl = fullPostUrls[i]
+        oneUrl = secondFullPostUrls[i]
 
         for x in soup.find_all('a', class_="nJAzx"):
             onePoster = x.get('title')
@@ -156,8 +158,7 @@ for k in range(len(tags)):
 
 firstLayerPosts
 
-#%%
-from pymongo import MongoClient
+# %% Connect to MongoDB
 
 hostname = '52.54.130.90'
 port = 27017
