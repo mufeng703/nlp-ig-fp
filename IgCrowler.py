@@ -29,6 +29,65 @@ driver.implicitly_wait(20)
 Urls = []
 postUrl = []
 
+sleep(1)
+
+infoDF = pd.DataFrame(columns=("ID", "ImageURL", "PostNumber", "FollowerNumber", "FollowingNumber", "Name", "Description", "Link"))
+
+page_1_source = driver.page_source
+soup = BeautifulSoup(page_1_source, "html.parser")
+
+for x in soup.find_all('div', class_="nZSzR"):
+    t = x.find_all('h1')
+    ID = t[0].text
+
+print(ID)
+
+if not soup.find("img", class_="_6q-tv"):
+    ImageURL = None
+else:
+    ImageURL = soup.find("img", class_="_6q-tv").get("src")
+
+print(ImageURL)
+
+PostNumber = soup.find("span", class_="-nal3").text
+print(PostNumber)
+
+if not soup.find_all("a", class_="-nal3"):
+    FollowerNumber = soup.find_all("span", class_="-nal3")[1].text
+    FollowingNumber = soup.find_all("span", class_="-nal3")[2].text
+else:
+    FollowerNumber = soup.find_all("a", class_="-nal3")[0].text
+    FollowingNumber = soup.find_all("a", class_="-nal3")[1].text
+
+print(FollowerNumber)
+print(FollowingNumber)
+
+infoClass = soup.find("div", class_="-vDIg")
+if not infoClass.find("h1"):
+    Name = None
+else:
+    Name = infoClass.find("h1").text
+
+if not infoClass.find("span"):
+    Description = None
+else:
+    Description = infoClass.find("span").text
+
+if not infoClass.find("a", class_="yLUwa"):
+    Link = None
+else:
+    Link = infoClass.find("a", class_="yLUwa").text
+
+print(Name)
+print(Description)
+print(Link)
+
+infoDF.loc[-1] = [ID, ImageURL, PostNumber, FollowerNumber, FollowingNumber, Name, Description, Link]
+infoDF.index = infoDF.index + 1
+infoDF = infoDF.sort_index()
+
+infoDF
+
 for i in range(0, 5):
     driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     sleep(3)
@@ -52,7 +111,7 @@ for i in range(len(uniqueUrls)):
 print(fullPostUrls)
 
 # %% First Layer
-firstLayerPosts = pd.DataFrame(columns=("PostUrl", "Poster", "Date", "Time", "Post", "Tag", "TagPeople"))
+firstLayerPosts = pd.DataFrame(columns=("PostUrl", "Poster", "Name", "Date", "Time", "Post", "Tag", "TagPeople"))
 firstLayerPosts = firstLayerPosts.iloc[0:0]
 firstLayerAllTags = []
 
@@ -75,6 +134,9 @@ for i in range(len(fullPostUrls)):
 
     oneUrl = fullPostUrls[i]
 
+    nameText = soup.find("title").text
+    oneName = nameText.split("的", 1)[1].split("：", 1)[0]
+
     for x in soup.find_all('a', class_="nJAzx"):
         onePoster = x.get('title')
 
@@ -84,9 +146,9 @@ for i in range(len(fullPostUrls)):
 
     for x in soup.find_all('div', class_="C7I1f X7jCj"):
         allSpan = x.find_all('span')
-        onePost = allSpan[len(allSpan)-1].text
+        onePost = allSpan[len(allSpan) - 1].text
 
-    firstLayerPosts.loc[-1] = [oneUrl, onePoster, oneDate, oneTime, onePost, len(tagPeople), tagPeople]
+    firstLayerPosts.loc[-1] = [oneUrl, onePoster, oneName, oneDate, oneTime, onePost, len(tagPeople), tagPeople]
     firstLayerPosts.index = firstLayerPosts.index + 1
     firstLayerPosts = firstLayerPosts.sort_index()
 
@@ -99,7 +161,7 @@ tags = list(set(firstLayerAllTags))
 
 for k in range(len(tags)):
     print(tags[k])
-    driver.get("https://www.instagram.com/"+tags[k])
+    driver.get("https://www.instagram.com/" + tags[k])
     secondUrls = []
     secondPostUrl = []
     for i in range(0, 5):
@@ -141,6 +203,9 @@ for k in range(len(tags)):
 
         oneUrl = secondFullPostUrls[i]
 
+        nameText = soup.find("title").text
+        oneName = nameText.split("的", 1)[1].split("：", 1)[0]
+
         for x in soup.find_all('a', class_="nJAzx"):
             onePoster = x.get('title')
 
@@ -150,9 +215,9 @@ for k in range(len(tags)):
 
         for x in soup.find_all('div', class_="C7I1f X7jCj"):
             allSpan = x.find_all('span')
-            onePost = allSpan[len(allSpan)-1].text
+            onePost = allSpan[len(allSpan) - 1].text
 
-        firstLayerPosts.loc[-1] = [oneUrl, onePoster, oneDate, oneTime, onePost, len(tagPeople), tagPeople]
+        firstLayerPosts.loc[-1] = [oneUrl, onePoster, oneName, oneDate, oneTime, onePost, len(tagPeople), tagPeople]
         firstLayerPosts.index = firstLayerPosts.index + 1
         firstLayerPosts = firstLayerPosts.sort_index()
 
@@ -171,27 +236,27 @@ db = client[databaseName]
 db.authenticate(username, password)
 
 db = client['FinalProject']
-mycol = db["20200101"]
+mycol = db["20200103All"]
 
 records = firstLayerPosts.to_dict('records')
 mycol.insert_many(records)
-#%%
-# driver.get("https://www.instagram.com/p/B6Aw0ltl4Ue/")
-# tagPeople = []
+
+mycol = db["20200103Info"]
+records = infoDF.to_dict('records')
+mycol.insert_many(records)
+# %%
+# driver.get("https://www.instagram.com/p/B48yYkQFI86/")
+# driver.implicitly_wait(20)
+# Urls = []
+# postUrl = []
+#
+# infoDF = pd.DataFrame(
+#     columns=("ID", "ImageURL", "PostNumber", "FollowerNumber", "FollowingNumber", "Name", "Description", "Link"))
 # sleep(1)
-# postSource = driver.page_source
-# soup = BeautifulSoup(postSource, "html.parser")
-# for link in soup.find_all('a', class_="JYWcJ"):
-#     # print(link.get('href'))
-#     tagPeople.append(link.get('href'))
-#     tagPeople = [i.strip('/') for i in tagPeople]
+# page_1_source = driver.page_source
+# soup = BeautifulSoup(page_1_source, "html.parser")
 #
-# print(tagPeople)
-#
-# for x in soup.find_all('div', class_="C7I1f X7jCj"):
-#     allSpan = x.find_all('span')
-#     onePost = allSpan[len(allSpan)-1].text
-#
-# print(onePost)
-#
-#
+# nameText = soup.find("title").text
+# nameText = nameText.split("的",1)[1].split("：",1)[0]
+# print(nameText)
+

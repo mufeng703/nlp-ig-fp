@@ -16,7 +16,7 @@ db = client[databaseName]
 db.authenticate(username, password)
 
 db = client['FinalProject']
-mycol = db["20200101"]
+mycol = db["20200103All"]
 
 post = []
 postID = []
